@@ -14,3 +14,4 @@ Werkzeug==2.2.2
 panel==0.13.1
 param==1.12.2
 pydantic==1.10.2
+Python==3.10.8
