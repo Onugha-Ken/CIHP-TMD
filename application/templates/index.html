@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>TMD Login</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/jpg" sizes="32x32" href="{{ url_for('static', filename='images/my_favicon.jpg') }}">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-radius: 1.5em;
+        }
+
+        /* Form Header */
+        .form-header img {
+            width: 150px;
+            margin-bottom: 10px;
+        }
+
+        .form-header h2 {
+            margin-bottom: 5px;
+            font-size: 24px;
+            color: #464444;
+        }
+
+        .form-header p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+
+        /* Form Group */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+            margin-left: 15px; 
+            font-family: sans-serif;
+            font-size: 12px;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            display: block;
+            color: #333;
+        }
+
+        .form-input {
+            width: 76%;
+            color: rgb(38, 50, 56);
+            font-size: 14px;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 20px;
+            outline: none;
+            box-sizing: border-box;
+            border: 2px solid rgba(0, 0, 0, 0.02);
+            margin-left: 35px; 
+            font-family: sans-serif;
+            padding: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+        }
+
+        .form-input:focus {
+            border-color: #7c82ff;
+            box-shadow: 0 0 5px rgba(124, 130, 255, 0.5);
+            background-color: #fff;
+        }
+
+        /* Remember Me */
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+            font-family: sans-serif;
+            font-size: 12px;
+        }
+
+        .remember-me input {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        /* Form Button */
+        .form-button {
+            cursor: pointer;
+            border-radius: 5em;
+            color: #fff;
+            background: linear-gradient(to right, #7c82ff, #3bc611bf);
+            border: 0;
+            padding-left: 40px;
+            padding-right: 40px;
+            padding-bottom: 10px;
+            padding-top: 10px;
+            font-family: sans-serif;
+            margin-left: 35%;
+            font-size: 13px;
+            box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.04);
+            transition: background 0.3s ease;
+        }
+
+        .form-button:hover {
+            background: #5c63e7;
+        }
+
+        .form-button:active {
+            background: #3b42b8;
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #d9534f;
+            font-size: 14px;
+            margin-top: 15px;
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 500px) {
+            .container {
+                padding: 15px;
+                margin: 0 15px;
+            }
+
+            .form-header img {
+                width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-header">
+            <img src="{{ url_for('static', filename = 'images/CIHPLogo.png') }}" alt="CIHP Logo">
+            <h2>Treatment Monitoring Dashboard</h2>
+            <p>Login to continue</p>
+        </div>
+
+        <form method="POST" action="/login">
+            <!-- Email Input -->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="email">
+            </div>
+            <!-- Password Input -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input name="password" type="password" class="form-input" placeholder="password">
+            </div>
+            <!-- Remember Me Checkbox -->
+            <div class="remember-me">
+                <input type="checkbox" id="remember_me" name="remember_me">
+                <label for="remember_me">Remember me</label>
+            </div>
+            <!-- Login Button -->
+            <div class="form-group">
+                <button class="form-button" type="submit">Login</button>
+            </div>
+        </form>
+
+        <!-- Error Message Display -->
+        {% if failed_attempt %}
+            <span class="error-message">{{ failed_attempt|safe }}</span>
+        {% endif %}
+    </div>
+
+    <script>
+        // Check if "Remember Me" was previously checked and restore state
+        document.addEventListener('DOMContentLoaded', function() {
+            const rememberMeCheckbox = document.getElementById('remember_me');
+            const usernameInput = document.querySelector('input[name="username"]');
+
+            if (localStorage.getItem('remember_me') === 'true') {
+                rememberMeCheckbox.checked = true;
+                usernameInput.value = localStorage.getItem('username');
+            }
+
+            rememberMeCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    localStorage.setItem('remember_me', 'true');
+                    localStorage.setItem('username', usernameInput.value);
+                } else {
+                    localStorage.removeItem('remember_me');
+                    localStorage.removeItem('username');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+    <title>CIHP Treatment Monitoring Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/jpg" sizes="32x32" href="{{ url_for('static', filename='images/my_favicon.jpg') }}">
+
+    <!-- jQuery library (should be loaded before other libraries) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+
+    <!-- Bootstrap (CSS) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    
+    <!-- DataTables CSS -->
+	<link href="https://cdn.datatables.net/v/dt/dt-2.1.0/b-3.1.0/b-html5-3.1.0/b-print-3.1.0/cr-2.0.3/sc-2.4.3/datatables.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
+
+    <!-- Bokeh (CSS) -->
+    <link rel="stylesheet" href="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.min.css">
+
+    <!-- MarkerCluster Leaflet (CSS) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css">
+
+    <!-- DataTables JS -->
+	<script src="https://cdn.datatables.net/v/dt/dt-2.1.0/b-3.1.0/b-html5-3.1.0/b-print-3.1.0/cr-2.0.3/sc-2.4.3/datatables.min.js"></script>	
+    <script src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+
+    <!-- Bootstrap (JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Bokeh (JS) -->
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-2.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"></script>
+
+    <!-- Leaflet (JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js"></script>
+
+    <!-- D3.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+
+
+
+	<style>
+		#loadingSpinner {
+			position: fixed;
+			left: 50%;
+			top: 50%;
+			z-index: 1000;
+			width: 100px;
+			height: 100px;
+			margin: -50px 0 0 -50px;
+			border: 16px solid #f3f3f3;
+			border-radius: 50%;
+			border-top: 16px solid #3498db;
+			border-right: 16px solid #e74c3c;
+			border-bottom: 16px solid #2beaea;
+			border-left: 16px solid #2ecc71;
+			animation: spin 2s linear infinite;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+
+
+
+		/* Style for header */
+		.header {
+			background-color: #1909d5;
+			font-family: Sans, sans-serif;
+			color: #fff;
+			padding: 10px;
+			text-align: center;
+			display: flex;
+			align-items: center;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			z-index: 1;
+			/* Ensure the hovered header is on top of other elements */
+		}
+
+		.custom-tooltip {
+			--bs-tooltip-bg: var(--bd-violet-bg);
+			--bs-tooltip-color: var(--bs-white);
+		}
+
+		/* Style for logo */
+		.logo {
+			margin-right: auto;
+			height: 100px;
+			width: 150px;
+			border-radius: 5px;
+		}
+
+		/* Style for title */
+		.title {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 auto;
+		}
+
+		/* Style for logout button */
+		.logout {
+			margin-left: auto;
+			margin-right: 20px;
+			background-color: #fff;
+			color: #1907dac2;
+			padding: 8px 12px;
+			border: none;
+			cursor: pointer;
+			font-size: 16px;
+			border-radius: 5px;
+			text-align: center;
+			transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+		}
+
+		/* Hover style for logout button */
+		.logout:hover {
+			background-color: #1907dac2;
+			color: #fff;
+		}
+
+		/* Style for left-sidebar */
+		.sidebar {
+			position: fixed;
+			font-family: Sans, sans-serif;
+			z-index: 1;
+			top: 12%;
+			left: 0px;
+			height: calc(100% - 75px);
+			/* Adjusted height */
+			width: 280px;
+			/* background-color: #e8fcc3; */
+			background-color: rgba(232, 252, 195, 0.95);
+			overflow-x: hidden;
+			overflow-y: auto;
+			/* Changed to auto */
+			transition: 0.3s;
+			padding-top: 15px;
+		}
+
+		/* Style for sidebar links */
+		.sidebar a {
+			padding: 8px 8px 8px 32px;
+			text-decoration: none;
+			font-size: 25px;
+			color: #818181;
+			display: block;
+			transition: 0.3s;
+		}
+
+		/* Hover style for sidebar links */
+		.sidebar a:hover {
+			color: #fff;
+			background-color: #0bb389;
+			/* background-color: #2b9eb0; */
+		}
+
+		/* Style for open button */
+		.sidebar .openbtn {
+			margin-right: 20px;
+			font-size: 20px;
+			border-radius: 5px;
+			cursor: pointer;
+			background-color: #fff;
+			color: #1907dac2;
+			padding: 10px;
+			border: none;
+			transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+		}
+
+		/* Hover style for menu button */
+		.openbtn:hover {
+			background-color: #1907dac2;
+			color: #fff;
+		}
+
+		/* Style for close button */
+		.sidebar .closebtn {
+			position: absolute;
+			top: 0px;
+			right: 0px;
+			font-size: 36px;
+			padding: 0;
+			padding-left: 20px;
+			width: 40px;
+			height: 40px;
+			border-radius: 5px;
+		}
+
+		/* Style for sidebar content */
+		.sidebar .fonts {
+			font-size: 20px;
+			border-radius: 5px;
+		}
+
+		.sidebar h3 {
+			margin-top: 0;
+			font-size: 18px;
+			color: #333;
+		}
+
+		.sidebar label {
+			display: block;
+			margin-top: 10px;
+			margin-bottom: 10px;
+			font-size: 14px;
+			font-weight: bold;
+			color: #555;
+		}
+
+		.sidebar select {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 12px;
+			color: #333;
+			background-color: #f9f9f9;
+		}
+
+		.sidebar select option {
+			width: 100%;
+			font-size: 12px;
+		}
+
+		/* Style for main content */
+		.main {
+			margin: 0;
+			/* Remove default margin */
+			padding: 0;
+			position: relative;
+		}
+
+		/* Style for footer */
+		.footer {
+			background-color: #e1f7c6;
+			height: 3rem;
+			width: 100%;
+			text-align: center;
+			position: fixed;
+			bottom: 0;
+			/* Align to the bottom of the viewport */
+			left: 0;
+			/* Align to the left of the viewport */
+		}
+
+		/* On smaller screens, where height is less than 450px, change the style of 
+			the sidenav (less padding and a smaller font size) */
+		@media screen and (max-height: 450px) {
+			.sidebar {
+				padding-top: 15px;
+			}
+
+			.sidebar a {
+				font-size: 18px;
+			}
+		}
+
+		/* Container for the grid */
+		.container {
+			display: grid;
+			/* grid-template-rows: repeat(19, auto); */
+			/* 19 rows with auto height*/
+			gap: 15px;
+			/* Minimal space between rows*/
+			padding: 60px 15px 10px 15px;
+			width: 1200px;
+			margin: 0 auto;
+			/* This centers the container horizontally */
+		}
+
+		/* Each row */
+		.row {
+			gap: 15px;
+			/* Minimal space between cards in a row */
+			justify-content: center;
+			/*Center cards horizontally */
+		}
+
+		/* Each card */
+		.card {
+			display: inline-block;
+			background: #ffffff;
+			color: #0c9875;
+			position: relative;
+			border-radius: 2.5em;
+			padding: 1em;
+			transition: transform 0.9s ease;
+		}
+
+		.card .card-content {
+			display: flex;
+			flex-direction: column;
+			/* Stack contents vertically */
+			justify-content: center;
+			align-items: center;
+			transition: transform 0.4s ease;
+		}
+
+		.card-title {
+			margin: 0;
+			font-size: 12px;
+		}
+
+		.card:hover {
+			transform: scale(0.985);
+			/*z-index: 1;  Ensure the hovered card is on top of other cards */
+		}
+
+		.card:active {
+			transform: scale(0.985);
+		}
+
+		/* Adjust the size of cards for the first row 21 */
+		.row:first-child .card {
+			flex: 0 1 15%;
+			/* Smaller cards */
+		}
+
+		/* Add space between cards in the first row 35px */
+		.row:first-child .card+.card {
+			margin-left: 0px;
+		}
+
+		/* Adjust the size of cards for the second and fourth rows */
+		.row:nth-child(n+2) .card {
+			flex: 1;
+			/* Bigger cards */
+		}
+
+		/* Adjust the size of cards for the first row 21 */
+		.row:first-child .card {
+			flex: 0 1 15.1%;
+			/* Smaller cards */
+		}
+
+		/* Add space between cards in the first row 35px */
+		.row:first-child .card+.card {
+			margin-left: 0px;
+		}
+
+		.h3 {
+			padding: 0em;
+			place-items: center;
+		}
+
+		div.dt-container {
+			width: 1180px;
+			margin: 0 auto;
+		}
+
+		#row-plot1_2 {
+			display: none;
+			/* Initially hidden */
+		}
+
+		#row-plot3_4 {
+			display: none;
+		}
+
+		#row-plot5_6 {
+			display: none;
+		}
+
+		#row-plot7_8 {
+			display: none;
+
+		}
+
+		#row-plot7 {
+			display: none;
+		}
+
+		#row-plot8 {
+			display: none;
+		}
+
+		#row-plot9 {
+			display: none;
+		}
+
+		#row-plot10 {
+			display: none;
+		}
+
+		#row-plot11 {
+			display: none;
+		}
+
+		#row-plot12 {
+			display: none;
+		}
+
+		#row-plot13 {
+			display: none;
+		}
+
+		#row-plot14 {
+			display: none;
+		}
+
+		#row-plot15 {
+			display: none;
+		}
+
+		#row-plot16 {
+			display: none;
+		}
+
+		#row-plot17 {
+			display: none;
+		}
+
+		#row-plot18 {
+			display: none;
+		}
+
+		#row-plot19 {
+			display: none;
+		}
+
+		.bk-btn-success {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.75rem;
+		}
+
+		#states {
+			display: none;
+		}
+
+		#states.show {
+			display: list-item;
+		}
+
+		#lgas {
+			display: none;
+		}
+
+		#lgas.show {
+			display: list-item;
+		}
+
+		#commands {
+			display: none;
+		}
+
+		#commands.show {
+			display: list-item;
+		}	
+
+		/* Form Button */
+        .download-button {
+            cursor: pointer;
+            /* border-radius: 5em; */
+            color: #fff;
+            background: linear-gradient(to right, #0bb389, #3bc611bf);
+            border: 0;
+            /* padding-left: 40px; */
+            /* padding-right: 40px; */
+            /* padding-bottom: 10px; */
+            /* padding-top: 10px; */
+            font-family: sans-serif;
+            /* margin-left: 35%; */
+            /* font-size: 13px; */
+            box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.04);
+            transition: background 0.3s ease;
+        }
+
+        .download-button:hover {
+            background: #5c63e7;
+        }
+
+        .download-button:active {
+            background: #3b42b8;
+        }
+
+	</style>
+
+</head>
+
+
+<body data-new-gr-c-s-check-loaded="14.1111.0" data-gr-ext-installed="">
+	<fast-design-system-provider id="body-design-provider" use-defaults="" accent-foreground-cut-rest="#FFFFFF"
+		background-color="#ffffff" accent-base-color="#4099da">
+		<div id="container">
+			<fast-design-system-provider id="header-design-provider">
+				<nav id="header">
+					<header class="header">
+	
+						<button class="openbtn" onclick="openNav()" id="sidebar-button" data-bs-toggle="tooltip"
+							data-bs-placement="bottom" data-bs-custom-class="custom-tooltip"
+							data-bs-title="Toggle the sidebar">☰ Menu</button>
+	
+						<img src="{{ url_for('static', filename = 'images/CIHPLogo.png') }}" alt=""
+							style="width: 65px; height: 30px; margin-left: 16px; ">
+	
+						<h1 class="title">Treatment Monitoring Dashboard</h1>
+	
+						{% if session.get('username') %}
+						{{ username }}
+						{% else %}	
+						{% endif %}
+	
+						<form action="/logout" method="get">
+							<button class="logout" type="submit">Logout</button>
+						</form>
+					</header>
+				</nav>
+			</fast-design-system-provider>
+	
+	
+			<!-- Loading Spinner -->
+			<div id="loadingSpinner" style="display:none;"></div>
+	
+	
+			<main>
+				<div class="row" id="main">
+					<div class="sidebar" id="mySidebar">
+						<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+						<h3>Quarterly Performance</h3>
+						<details>
+							Select an indicator to enable filters.
+							Select only a state(s), LGA(s), command(s), facility or facilities and click 'Submit'.
+							Hold down the Ctrl or Shift key to select multiple items.
+							Click Menu to open/close sidebar.
+						</details>			
+							
+						<form id="dashboard_form" name="dashboard_form">
+							<script>			
+								function downloadLineList() {
+									const formData = new FormData();
+									formData.append('indicator', document.getElementById('indicator').value);
+									formData.append('selectedIP', document.getElementById('ip').value);
+									formData.append('selectedState', JSON.stringify(Array.from(document.getElementById('states').selectedOptions).map(option => option.value)));
+									formData.append('selectedLGA', JSON.stringify(Array.from(document.getElementById('lgas').selectedOptions).map(option => option.value)));
+									formData.append('selectedCommand', JSON.stringify(Array.from(document.getElementById('commands').selectedOptions).map(option => option.value)));
+									formData.append('selectedFacility', JSON.stringify(Array.from(document.getElementById('facilities').selectedOptions).map(option => option.value)));
+
+									fetch('/download_line_list', {
+										method: 'POST',
+										body: formData,
+									})
+									.then(response => {
+										if (response.status === 204) {
+											// Handle empty data
+											alert('Please select an indicator and at least one option from ONE of the dropdown menus.');
+											// Clear selections in dropdowns
+											document.getElementById('indicator').value = "";
+											document.getElementById('ip').value = "";
+											$('#states').val([]);
+											$('#lgas').val([]);
+											$('#commands').val([]);
+											$('#facilities').val([]);
+											$('#loadingSpinner').hide();  // Hide the spinner
+											return;
+										} else {
+											return response.blob();
+										}
+									})
+									.then(blob => {
+										if (blob) {
+											const url = window.URL.createObjectURL(blob);
+											const a = document.createElement('a');
+											a.href = url;
+											a.download = 'line_list.csv';
+											document.body.appendChild(a);
+											a.click();
+											a.remove();
+										}
+									})
+									.catch(error => console.error('Error downloading line list:', error));
+								}
+
+							</script>
+							
+							<div>
+								<label for="indicator" title="Click 'Select Indicator' to refresh filters">MER Treatment
+									Indicator:</label>
+								<select id="indicator" name="indicator" onchange="updateDropdowns()">
+									<option value="">Select Indicator</option>
+									<option value="TX_CURR">Treatment Current</option>
+									<!-- <option value="PBS_CURR">Treatment Current Biometrics</option> -->
+									<option value="TX_ML">Treatment Mortality & Loss</option>
+									<option value="TX_NEW">Treatment New</option>
+									<option value="TX_RTT">Returned to Treatment</option>
+									<option value="TX_PVLS">Treatment PVLS</option>
+									<option value="PBFW VLS">Pregnant & Breastfeeding Women VLS</option>
+									<option value="PW VLS">Pregnant Women VLS</option>
+									<option value="BFW VLS">Breastfeeding Women VLS</option>
+								</select>
+							</div>
+	
+							<div>
+								<label for="ip" title="First select an indicator">Overall Performance:</label>
+								<select id="ip" name="ip" disabled>
+									<option value="">CIHP</option> <!-- IP options will be populated dynamically -->
+								</select>
+							</div>
+	
+							<!-- onchange="updateLGAsAndCommands()" -->
+							<div>
+								<label for="states" title="First select an indicator">State(s):</label>
+								<select id="states" name="states" multiple disabled>
+									<option value="">Select State(s)</option>
+								</select>
+							</div>
+	
+							<script>
+								document.addEventListener('DOMContentLoaded', function () {
+									const selectElement = document.getElementById('states');
+									const labelElement = document.querySelector('label[for="states"]');
+
+									labelElement.addEventListener('click', function () {
+										selectElement.classList.toggle('show');
+									});
+								});							
+							</script>
+	
+							<!-- onchange="updateLGAs()" -->
+							<div>
+								<label for="lgas" title="First select an indicator">LGA(s):</label>
+								<select id="lgas" name="lgas" multiple disabled>
+									<option value="">Select LGA(s)</option>
+								</select>
+							</div>
+	
+							<script>
+								document.addEventListener('DOMContentLoaded', function () {
+									const selectElement = document.getElementById('lgas');
+									const labelElement = document.querySelector('label[for="lgas"]');
+
+									labelElement.addEventListener('click', function () {
+										selectElement.classList.toggle('show');
+									});
+								});							
+							</script>
+	
+							<!-- onchange="updateCommands()" -->
+							<div>
+								<label for="commands" title="First select an indicator">Surge Command(s):</label>
+								<select id="commands" name="commands" multiple disabled>
+									<option value="">Select Command(s)</option>
+								</select>
+							</div>
+	
+							<script>
+								document.addEventListener('DOMContentLoaded', function () {
+									const selectElement = document.getElementById('commands');
+									const labelElement = document.querySelector('label[for="commands"]');
+
+									labelElement.addEventListener('click', function () {
+										selectElement.classList.toggle('show');
+									});
+								});							
+							</script>
+	
+							<!-- "Select an indicator then LGA(s) to view dropdown"  onchange="updateFacilities()"-->
+							<div>
+								<label for="facilities" title="First select an indicator">Facility(s):</label>
+								<select id="facilities" name="facilities" multiple disabled>
+									<option value="">Select Facility(s)</option>
+								</select>
+							</div>
+	
+							<script>
+								document.addEventListener('DOMContentLoaded', function () {
+									const selectElement = document.getElementById('facilities');
+									const labelElement = document.querySelector('label[for="facilities"]');
+
+									labelElement.addEventListener('click', function () {
+										selectElement.classList.toggle('show');
+									});
+								});							
+							</script>
+
+							<button class="download-button" type="submit" onclick="submitForm()">Submit</button>	
+							<br/>
+							<br/>
+							<!-- Download Line List button -->
+							<button class="download-button" type="button" onclick="downloadLineList()">Download Line List</button>						
+						</form>
+					</div>
+				</div>
+	
+				<div class="container">
+					<!-- First row -->
+					<div class="row" id="row_0" name="row_0">
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">Number of Facilities</div>
+								<div id="fac_num" name="fac_num"></div>
+							</div>
+						</div>
+	
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+										class="bi bi-people-fill" viewBox="0 0 16 16">
+										<path
+											d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+									</svg>
+									Number of Clients
+								</div>
+								<div id="achieved" name="achieved"></div>
+							</div>
+						</div>
+	
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+										class="bi bi-person-check-fill" viewBox="0 0 16 16">
+										<path fill-rule="evenodd"
+											d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0" />
+										<path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+									</svg>
+									Biometrics Captured
+								</div>
+								<div id="achieved_pbs" name="achieved_pbs"></div>
+							</div>
+						</div>
+	
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">Biometrics Coverage (%)</div>
+								<div id="percent_pbs" name="percent_pbs"></div>
+							</div>
+						</div>
+	
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+										class="bi bi-fingerprint" viewBox="0 0 16 16">
+										<path
+											d="M8 1a7 7 0 0 0-7 7c0 1.653.529 3.182 1.508 4.436a.5.5 0 1 0 .788-.618A6 6 0 1 1 8 14a.5.5 0 0 0 0 1 7 7 0 1 0 0-14z" />
+										<path
+											d="M8 3a5 5 0 0 0-5 5c0 1.2.383 2.307 1.058 3.236a.5.5 0 1 0 .784-.618A4 4 0 1 1 8 12a.5.5 0 0 0 0 1 5 5 0 1 0 0-10z" />
+										<path
+											d="M8 5a3 3 0 0 0-3 3c0 .653.21 1.257.566 1.741a.5.5 0 1 0 .768-.64A2 2 0 1 1 8 8a.5.5 0 0 0 0 1 3 3 0 1 0 0-6z" />
+										<path
+											d="M8 7a1 1 0 0 0-1 1c0 .26.09.5.241.707a.5.5 0 0 0 .518.853A1.5 1.5 0 1 1 8 8a.5.5 0 0 0 0 1 1 1 0 1 0 0-2z" />
+									</svg>
+									Number Recaptured
+								</div>
+								<div id="achieved_recapture" name="achieved_recapture"></div>
+							</div>
+						</div>
+	
+						<div class="card" style="font-weight: bold; color: green; font-size: 15px;">
+							<div class="card-content">
+								<div class="card-title">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+										class="bi bi-percent" viewBox="0 0 16 16">
+										<path
+											d="M13.442 2.558a.625.625 0 0 1 0 .884l-10 10a.625.625 0 1 1-.884-.884l10-10a.625.625 0 0 1 .884 0M4.5 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m0 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5m7 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m0 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+									</svg>
+									Recaptured
+								</div>
+								<div id="percent_recaptured" name="percent_recaptured"></div>
+							</div>
+						</div>
+	
+					</div>
+	
+					<!-- <p id="error-message"></p> Paragraph for error message -->
+	
+					<!-- Second row -->
+					<div class="row" id="row-plot1_2" name="row-plot1_2">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot1" name="plot1"></div>
+							</div>
+						</div>
+	
+						<div class="card">
+							<div class="card-content">
+								<div id="plot2" name="plot2"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- Third row -->
+					<div class="row" id="row-plot3_4" name="row-plot3_4">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot3" name="plot3"></div>
+							</div>
+						</div>
+	
+						<div class="card">
+							<div class="card-content">
+								<div id="plot4" name="plot4"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- Fourth row -->
+					<div class="row" id="row-plot5_6" name="row-plot5_6">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot5" name="plot5"></div>
+							</div>
+						</div>
+	
+						<div class="card">
+							<div class="card-content">
+								<div id="plot6" name="plot6"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- Fifth row -->
+					<div class="row" id="row-plot7_8" name="row-plot7_8">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot7" name="plot7"></div>
+							</div>
+						</div>
+	
+						<div class="card">
+							<div class="card-content">
+								<div id="plot8" name="plot8"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 6th row -->
+					<div class="row" id="row-plot9" name="row-plot9">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot9" name="plot9"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 7th row -->
+					<div class="row" id="row-plot10" name="row-plot10">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot10" name="plot10"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 8th row -->
+					<div class="row" id="row-plot11" name="row-plot11">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot11" name="plot11"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 9th row -->
+					<div class="row" id="row-plot12" name="row-plot12">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot12" name="plot12"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 10th row -->
+					<div class="row" id="row-plot13" name="row-plot13">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot13" name="plot13"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 11th row -->
+					<div class="row" id="row-plot14" name="row-plot14">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot14" name="plot14"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 12th row -->
+					<div class="row" id="row-plot15" name="row-plot15">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot15" name="plot15"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 13th row -->
+					<div class="row" id="row-plot16" name="row-plot16">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot16" name="plot16"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 14th row -->
+					<div class="row" id="row-plot17" name="row-plot17">
+						<div class="card">
+							<div class="card-content">
+								<div id="plot17" name="plot17"></div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- 15th row -->
+					<div class="row" id="row-plot18" name="row-plot18">
+						<div id="plot18" name="plot18"></div>
+					</div>
+	
+					<!-- 16th row class="card" width=100%-->
+					<div class="row" id="row-plot19" name="row-plot19">
+						<div id="plot19" name="plot19"></div>
+					</div>
+	
+				</div>
+	
+				<script>
+					const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+					const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+					// Define the available options for each dropdown
+					// Define menu_data as a JavaScript object (you can also paste the Python dict as JSON)
+					const menu_data = {
+						'indicator': ['TX_CURR', 'PBS_CURR', 'TX_NEW', 'TX_PVLS', 'TX_RTT', 'TX_ML', 'PBFW VLS', 'PW VLS', 'BFW VLS'],
+
+						'ip': ['CIHP'],
+
+						'states': ['Kaduna', 'Kogi', 'Lagos'],
+
+						'lgas': ["BirninGwari", "Chikun", "Giwa", "Igabi", "Jaba", "Jema'a", "Kachia", "KadunaNorth", "KadunaSouth", "Kagarko", "Kajuru", "Kaura", "Kauru", "Kubau", "Kudan", "Lere", "Makarfi", "SabonGari", "Sanga", "Soba", "ZangonKataf", "Zaria",
+							'Adavi', 'Ajaokuta', 'Ankpa', 'Bassa', 'Dekina', 'Idah', 'Ijumu', 'Kabba/Bunu', 'Kogi', 'Lokoja', 'Ofu', 'Ogori/Magongo', 'Okehi', 'Okene', 'Olamaboro', 'Omala', 'YagbaWest',
+							'Alimosho', 'Amuwo Odofin', 'Epe', 'Eti Osa', 'ibeju-lekki', 'ifako-ijaiye', 'Ikeja', 'Mushin', 'Oshodi_Isolo'],
+
+						'commands': ['Amkpa', 'Ankpa', 'Anyigba', 'Lokoja', 'Okene', 'YagbaWest',
+							'Alimosho_Amuwo', 'Epe_Ibeju-Lekki', 'Eti-Osa', 'Ifako_Ikeja', 'Mushin_Isolo'],
+
+						'facilities': [							
+							'Ahmadu Bello University Teaching Hospital Shika Zaria', 'Amina Hospital', 'Anna-Kitcher Hospital', 'Badarawa Primary Health Center',
+							'Barau Dikko Specialist Hospital', 'Barnawa Primary Health Center', 'Doka Rural Hospital', 'Federation of Muslim Women Association of Nigeria (FOMWAN) Hospital',
+							'Foltz Medical Center - Katari', 'General Hospital Giwa', 'General Hospital Saminaka', 'Giwa Hospital', 'Gwamna Awan General Hospital',
+							'Gwantu General Hospital', 'Hajiya Gambo Sawaba Hospital', 'Harmony Hospital', 'Hunkuyi General Hospital', 'Idon Rural Hospital',
+							'Ikara General Hospital', 'Jaji Comprehensive Health Center', 'Jibrin Maigwari Memorial Hospital Birnin Gwari', 'Jowako Hospital',
+							'Kachia General Hospital', 'Kafanchan Family Health Unit', 'Kafanchan General Hospital', 'Kagarko General Hospital', 'Kaura Rural Hospital',
+							'Kawo General Hospital', 'Kujama Rural Hospital', 'Kwoi General Hospital', 'Maigana General Hospital', 'Major Ibrahim Bello Abdullahi Memorial Hospital Sabongari',
+							'Makarfi General Hospital', 'Makera I Primary Health Center', 'Manchok Maternal and Child Health Clinic', 'Maneks Hospital', 'Kaduna State One Stop Shop (OSS) - Kaduna',
+							'Muslim Specialist Hospital', 'National Tuberculosis And Leprosy Training Center - Zaria', 'Pambegua General Hospital', 'Police Medical Center',
+							'Rigasa General Hospital', 'Rural Hospital Kauru', 'Sabo Tsaha Primary Health Center', 'Sabon Tasha General Hospital', 'Salamat Hospital',
+							'Sefa Hospital', "St. Gerald's Hospital - Kaduna", 'St. Louis Hospital - Zonkwa', "St. Luke's Hospital, Wusasa", 'Turaki Buga Memorial Hospital',
+							'Turunku Rural Hospital', 'Yusuf Dantsoho Memorial Hospital', 'Zakari Isah Memorial Clinic', 'Zango-Kataf General Hospital', 'Zonkwa Regional Hospital',
+							'Abejukolo General Hospital', 'Aiyetoro Gbede General Hospital', 'Ajaokuta Steel Medical Clinic', 'Ankpa General Hospital', 'Ankpa OSS',
+							'Dekina General Hospital', 'ECWA Hospital, Egbe', 'Egume General Hospital', 'General Hospital Kabba', 'Grimmard Hospital - Anyingba',
+							'Holley Memorial - Ochadamu', 'Idah General Hospital', 'Ika Christian Hospital', 'Iyale General Hospital', 'KPIF_Adavi OSS', 'KPIF_Dekina OSS',
+							'KPIF_Lokoja OSS', 'Kogi Diagnosis Referral Hospital', 'Kogi State Specialist Hospital', 'Koton-Karfe General Hospital', 'Lokoja Federal Medical Center',
+							'Maria Goretti Hospital', 'Nagazi Comprehensive Health Centre', 'Obangede General Hospital', 'Ogori General Hospital', 'Oguma General Hospital',
+							'Okene General Hospital', 'Okengwe General Hospital', 'Okpo General Hospital', "St John's Hospital Kabba", 'Ugwolawo General Hospital', 'Agbado Kola Primary Health Center', 'Agboju Primary Health Center', 'Ajah Primary Health Center', 'Ajeabo Primary Health Center',
+							'Akonwonjo Primary Health Center', 'Alimosho General Hospital', 'Amuwo Odofin KP OSS', 'Ancilla Catholic Hospital', 'Aregbesola Primary Health Center',
+							'Ayantuga Primary Health Center', 'Badore Primary Health Center', 'Christ the King Catholic Hospital - Akowonjo', 'Epe OSS', 'Eti-Osa KP On Stop Shop',
+							'Falomo Police Hospital', 'General Hospital Agbowa', 'General Hospital Epe', 'General Hospital Isolo', 'Gowon Estate Hospital - Ipaja',
+							'Holy Family Hospital_Lagos', 'Ibeju-Lekki General Hospital', 'Ifako Ijaiye General Hospital', 'Ifako Primary Health Centre', 'Ikate Primary Health Center',
+							'Ikotun Primary Health Center', 'Ipaja Primary Health Center', 'Iru Primary Health Center', 'Isolo OSS', 'Lagos State University Teaching Hospital',
+							'Lagos University Teaching Hospital (LUTH)', 'Longe Medical Center', 'Mary the Queen Hospital - Akowonjo', 'Meiran Primary Health Center',
+							'Mother Theresa Medical Center - Idimu', 'Mushin General Hospital', 'Mushin KP One Stop Shop', 'Ojodu Primary Health Care', 'Palm Avenue Primary Health Center',
+							'St. Catherine of Siena Medical Centre – Mafoluku', 'St. Joseph Mission Clinic Kirikiri', 'St. Kizito Clinic', 'St. Leo Medical Centre'
+						]
+					}
+
+					function updateDropdowns() {
+						const indicator = document.getElementById('indicator').value;
+						const ipDropdown = document.getElementById('ip');
+						const statesDropdown = document.getElementById('states');
+						const lgasDropdown = document.getElementById('lgas');
+						const commandsDropdown = document.getElementById('commands');
+						const facilitiesDropdown = document.getElementById('facilities');
+
+						// Clear previous options 
+						ipDropdown.innerHTML = '<option value="">Select</option>';
+						statesDropdown.innerHTML = '<option value="">Select State(s):</option>';
+						lgasDropdown.innerHTML = '<option value="">Select LGA(s)</option>';
+						commandsDropdown.innerHTML = '<option value="">Select Command(s)</option>';
+						facilitiesDropdown.innerHTML = '<option value="">Select Facility(s)</option>';
+
+						if (indicator) {
+							// Enable IP and states dropdowns
+							ipDropdown.removeAttribute('disabled');
+							statesDropdown.removeAttribute('disabled');
+							lgasDropdown.removeAttribute('disabled');
+							commandsDropdown.removeAttribute('disabled');
+							facilitiesDropdown.removeAttribute('disabled');
+							// Populate IP options
+							menu_data['ip'].forEach(option => {
+								ipDropdown.innerHTML += `<option value="${option}">${option}</option>`;
+							});
+							// Populate State options
+							menu_data['states'].forEach(option => {
+								statesDropdown.innerHTML += `<option value="${option}">${option}</option>`;
+							});
+							menu_data['lgas'].forEach(option => {
+								lgasDropdown.innerHTML += `<option value="${option}">${option}</option>`;
+							});
+
+							menu_data['commands'].forEach(option => {
+								commandsDropdown.innerHTML += `<option value="${option}">${option}</option>`;
+							});
+							menu_data['facilities'].forEach(option => {
+								facilitiesDropdown.innerHTML += `<option value="${option}">${option}</option>`;
+							});
+						}
+					}
+
+
+					function updateLGAs() {
+						const selectedLGAs = Array.from(document.getElementById('lgas').selectedOptions).map(option => option.value);
+					}
+
+					function updateCommands() {
+						const selectedCommand = Array.from(document.getElementById('commands').selectedOptions).map(option => option.value);
+					}
+
+					function updateFacilities() {
+						const selectedFacilities = Array.from(document.getElementById('facilities').selectedOptions).map(option => option.value);
+					}
+
+										
+					$(document).ready(function () {
+						// Event listener for form submission
+						$('#dashboard_form').on('submit', cacheOptions);
+						checkCache();
+					});
+
+					$('#loadingSpinner').show();
+					// Function to handle form submission
+					function checkCache() {
+						var cookieObjJson = localStorage.getItem("dataOptionsX0");
+						if (cookieObjJson === undefined || cookieObjJson === null) {
+							return;
+						}
+
+						console.log(cookieObjJson);
+
+						var cookieObj = JSON.parse(cookieObjJson)
+
+						if (cookieObj !== undefined && cookieObj !== null && cookieObj.url.length > 0) {
+							// Show the loading spinner
+							$('#loadingSpinner').show();
+							// Update the URL
+							window.history.pushState({}, '', cookieObj.url);
+
+							// Perform AJAX request								
+							$.ajax({
+								url: cookieObj.url,
+								type: 'POST',
+								contentType: 'application/json',
+								data: JSON.stringify(cookieObj.options),
+								success: function (response) {
+									if ($.isEmptyObject(response)) {
+										window.location.href = '/'; // Redirect to another URL
+										return;
+									}								
+
+									// Log the response to the console
+									console.log('Response from server:', response);
+									// Update dashboard divs with fetched data
+									// Update #fac_num with the styled whole number
+									$('#fac_num').html('<span style="font-weight: bold; color: blue; font-size: 45px;">' + response.fac_num + '</span>');
+
+									// Format and style achieved value
+									var achievedTxCurrFormatted = response.achieved.toLocaleString(); // Format with thousand separators
+									var achievedTxCurrHTML = '<span style="font-weight: bold; color: blue; font-size: 45px;">' + achievedTxCurrFormatted + '</span>';
+									$('#achieved').html(achievedTxCurrHTML);
+
+									// Format and style achieved_pbs value
+									var achievedPbsCurrFormatted = response.achieved_pbs.toLocaleString(); // Format with thousand separators
+									var achievedPbsCurrHTML = '<span style="font-weight: bold; color: blue; font-size: 45px;">' + achievedPbsCurrFormatted + '</span>';
+									$('#achieved_pbs').html(achievedPbsCurrHTML);
+
+									$('#percent_pbs').html('<span style="font-weight: bold; color: blue; font-size: 45px;">' + response.percent_pbs + '</span>');
+
+									var achievedRecaptureFormatted = response.achieved_recapture.toLocaleString(); // Format with thousand separators
+									var achievedRecaptureHTML = '<span style="font-weight: bold; color: blue; font-size: 45px;">' + achievedRecaptureFormatted + '</span>';
+									$('#achieved_recapture').html(achievedRecaptureHTML);
+
+									$('#percent_recaptured').html('<span style="font-weight: bold; color: blue; font-size: 45px;">' + response.percent_recaptured + '</span>');
+
+									// Clear existing plots
+									['plot1', 'plot1_additional', 'plot2', 'plot3', 'plot4', 'plot5', 'plot6', 'plot7', 'plot8', 'plot9', 'plot10', 'plot11', 'plot12', 'plot13', 'plot14', 'plot15', 'plot16', 'plot17', 'plot17_additional', 'plot18', 'plot19']
+										.forEach(plotId => {
+											$('#' + plotId).empty();
+										});
+
+									if (response.plot1) {
+										if (response.plot1.main) {
+											// Update #plot1 with the main Bokeh plot
+											Bokeh.embed.embed_item(response.plot1.main, "plot1");
+										}
+										if (response.plot1.additional) {
+											// Update #plot1_additional with the additional Bokeh plot
+											Bokeh.embed.embed_item(response.plot1.additional, "plot1");
+										}
+										$("#row-plot1_2").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot1_2").hide();
+									}
+
+									if (response.plot2 && response.plot2.trim() !== "") {
+										$('#plot2').html(response.plot2);
+										$("#row-plot1_2").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot1_2").hide();
+									}
+
+									if (response.plot3 && response.plot3.trim() !== "") {
+										$('#plot3').html(response.plot3);
+										$("#row-plot3_4").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot3_4").hide();
+									}
+
+									if (response.plot4 && response.plot4.trim() !== "") {
+										$('#plot4').html(response.plot4);
+										$("#row-plot3_4").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot3_4").hide();
+									}
+
+									if (response.plot5 && response.plot5.trim() !== "") {
+										$('#plot5').html(response.plot5);
+										$("#row-plot5_6").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot5_6").hide();
+									}
+
+									if (response.plot6 && response.plot6.trim() !== "") {
+										$('#plot6').html(response.plot6);
+										$("#row-plot5_6").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot5_6").hide();
+									}
+
+									if (response.plot7 && response.plot7.trim() !== "") {
+										$('#plot7').html(response.plot7);
+										$("#row-plot7_8").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot7_8").hide();
+									}
+
+									if (response.plot8 && response.plot8.trim() !== "") {
+										$('#plot8').html(response.plot8);
+										$("#row-plot7_8").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot7_8").hide();
+									}
+
+									if (response.plot9 && response.plot9.trim() !== "") {
+										$('#plot9').html(response.plot9);
+										$("#row-plot9").show();
+									} else {
+										$("#row-plot9").hide();
+									}
+
+									if (response.plot10 && response.plot10.trim() !== "") {
+										$('#plot10').html(response.plot10);
+										$("#row-plot10").show();
+									} else {
+										$("#row-plot10").hide();
+									}
+
+									if (response.plot11 && response.plot11.trim() !== "") {
+										$('#plot11').html(response.plot11);
+										$("#row-plot11").show();
+									} else {
+										$("#row-plot11").hide();
+									}
+
+									if (response.plot12 && response.plot12.trim() !== "") {
+										$('#plot12').html(response.plot12);
+										$("#row-plot12").show();
+									} else {
+										$("#row-plot12").hide();
+									}
+
+									if (response.plot13 && response.plot13.trim() !== "") {
+										$('#plot13').html(response.plot13);
+										$("#row-plot13").show();
+									} else {
+										$("#row-plot13").hide();
+									}
+
+									if (response.plot14 && response.plot14.trim() !== "") {
+										$('#plot14').html(response.plot14);
+										$("#row-plot14").show();
+									} else {
+										$("#row-plot14").hide();
+									}
+
+									if (response.plot15 && response.plot15.trim() !== "") {
+										$('#plot15').html(response.plot15);
+										$("#row-plot15").show();
+									} else {
+										$("#row-plot15").hide();
+									}
+
+									if (response.plot16 && response.plot16.trim() !== "") {
+										$('#plot16').html(response.plot16);
+										$("#row-plot16").show();
+									} else {
+										$("#row-plot16").hide();
+									}
+
+									if (response.plot17) {
+										if (response.plot17.main) {
+											// Update #plot17 with the main Bokeh plot
+											$('#plot17').html(response.plot17.main);
+										}
+										if (response.plot17.additional) {
+											// Update #plot17_additional with the additional Bokeh plot
+											Bokeh.embed.embed_item(response.plot17.additional, "plot17");
+										}
+										$("#row-plot17").css({
+											"display": "flex",
+											"flex-wrap": "wrap"
+										});
+									} else {
+										$("#row-plot17").hide();
+									}
+
+									if (response.plot18 && response.plot18.trim() !== "") {
+										$('#plot18').html(response.plot18);
+										$("#row-plot18").show();
+									}
+									else {
+										$("#row-plot18").hide();
+									}
+
+
+									if (response.plot19 && response.plot19.trim() !== "") {
+										$('#plot19').html(response.plot19);
+										$("#row-plot19").show();
+									}
+									else {
+										$("#row-plot19").hide();
+									}
+
+
+									// Hide the loading spinner
+									$('#loadingSpinner').hide();
+
+									// Reinitialize DataTables for each class	
+									reinitializeDataTables1('.tbl_ip');
+									reinitializeDataTables2('.tbl_fac');
+									reinitializeDataTables3('.cascade');
+
+								},																
+								error: function (error) {
+									console.log('Error:', error); // Log any errors to the console
+									// Hide the loading spinner
+									$('#loadingSpinner').hide();
+								}
+							});
+
+						}
+					}
+
+					function reinitializeDataTables1(tbl_ip) {
+						$('table.tbl_ip').each(function () {
+							$(this).DataTable({
+								colReorder: true,
+								dom: 'lBfrtip', // Added 'l' for length menu
+								autoWidth: true,
+								scrollX: true, // Make the table scrollable horizontally
+								buttons: ['copy', 'csv'],
+								"lengthMenu": [[5, 10, 25, 50, 130], [5, 10, 25, 50, 130]], // Length menu options
+								"headerCallback": function (thead, data, start, end, display) {
+									$('th', thead).css('font-size', '12px');
+								},
+								"createdRow": function (row, data, dataIndex) {
+									$('td', row).css('font-size', '12px');
+								}
+							});
+
+						});
+					}
+
+					function reinitializeDataTables2(tbl_fac) {
+						$('table.tbl_fac').each(function () {
+							$(this).DataTable({
+								colReorder: true,
+								dom: 'lBfrtip', // Added 'l' for length menu
+								autoWidth: true,
+								scrollX: true, // Make the table scrollable horizontally
+								buttons: ['copy', 'csv'],
+								"lengthMenu": [[5, 10, 15, 20], [5, 10, 15, 20]], // Length menu options
+								"headerCallback": function (thead, data, start, end, display) {
+									$('th', thead).css('font-size', '12px');
+								},
+								"createdRow": function (row, data, dataIndex) {
+									$('td', row).css('font-size', '12px');
+								}
+							});
+						});
+					}
+
+					function reinitializeDataTables3(cascade) {
+						$('table.cascade').each(function () {
+							$(this).DataTable({
+								colReorder: true,
+								dom: 'Bfrt',
+								autoWidth: true,
+								scrollX: true,
+								buttons: ['copy', 'csv'],
+								"headerCallback": function (thead, data, start, end, display) {
+									$('th', thead).css('font-size', '12px');
+								},
+								"createdRow": function (row, data, dataIndex) {
+									$('td', row).css('font-size', '12px');
+								}
+							});
+						});
+					}
+
+
+					function cacheOptions(event) {
+						// Prevent the default form submission behavior
+						event.preventDefault();
+						// Retrieve selected values from dropdown menus
+						const indicator = document.getElementById('indicator').value;
+						const selectedIP = document.getElementById('ip').value;
+						const selectedState = Array.from(document.getElementById('states').selectedOptions).map(option => option.value);
+						const selectedLGA = Array.from(document.getElementById('lgas').selectedOptions).map(option => option.value);
+						const selectedCommand = Array.from(document.getElementById('commands').selectedOptions).map(option => option.value);
+						const selectedFacility = Array.from(document.getElementById('facilities').selectedOptions).map(option => option.value);
+
+						// Construct dynamic part of the URL
+						var dynamicPart = '?indicator=' + indicator;
+						if (selectedIP) dynamicPart += '&ip=' + selectedIP;
+						if (selectedState.length > 0) dynamicPart += '&states=' + selectedState.join(',');
+						if (selectedLGA.length > 0) dynamicPart += '&lgas=' + selectedLGA.join(',');
+						if (selectedCommand.length > 0) dynamicPart += '&commands=' + selectedCommand.join(',');
+						if (selectedFacility.length > 0) dynamicPart += '&facilities=' + selectedFacility.join(',');
+
+						var ajaxURL = '/Request_Returned' + dynamicPart;
+						// Check if indicator is selected and if at least one other option is selected
+						if (!indicator || (!selectedIP.length && !selectedState.length && !selectedLGA.length && !selectedCommand.length && !selectedFacility.length)) {
+							alert('Please select an indicator and at least one option from ONE of the dropdown menus.');
+							
+							// Clear selections in dropdowns
+							document.getElementById('indicator').value = "";
+							document.getElementById('ip').value = "";
+							$('#states').val([]);
+							$('#lgas').val([]);
+							$('#commands').val([]);
+							$('#facilities').val([]);
+							$('#loadingSpinner').hide();  // Hide the spinner
+							return;
+						}
+
+
+						var cookieObj =
+						{
+							url: ajaxURL,
+							options:
+							{
+								indicator: indicator,
+								selectedIP: selectedIP,
+								selectedState: selectedState,
+								selectedLGA: selectedLGA,
+								selectedCommand: selectedCommand,
+								selectedFacility: selectedFacility
+							}
+						}
+
+						var cookieObjJson = localStorage.getItem("dataOptionsX0");
+						if (cookieObjJson === undefined || cookieObjJson === null) {
+							localStorage.setItem("dataOptionsX0", JSON.stringify(cookieObj));
+							checkCache();
+						}
+						else {
+							localStorage.setItem("dataOptionsX0", JSON.stringify(cookieObj));
+							window.location.reload();
+						}
+					}
+				</script>
+	
+	
+				<script>
+					// Function to close the sidebar by default when the page loads
+					window.onload = function () {
+						closeNav();
+					};
+
+					function openNav() {
+						document.getElementById("mySidebar").style.width = "280px";
+						document.getElementById("main").style.marginLeft = "10px";  //310px
+						document.getElementById("sidebar-button").onclick = closeNav;
+						var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
+						setTimeout(function () { clearInterval(interval) }, 210)
+					}
+
+					function closeNav() {
+						document.getElementById("mySidebar").style.width = "0";
+						document.getElementById("main").style.marginLeft = 0;
+						document.getElementById("sidebar-button").onclick = openNav;
+						var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
+						setTimeout(function () { clearInterval(interval) }, 210)
+					}
+				</script>
+	
+	
+		</div>
+	
+		</main>
+	
+	
+		<footer class="footer">
+			<p>&copy;
+				<script>document.write(new Date().getFullYear())</script>
+				Centre for Integrated Health Programs
+			</p>
+		</footer>
+	
+	</fast-design-system-provider>
+
+</body>
+</html>
